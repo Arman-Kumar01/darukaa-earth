@@ -35,11 +35,18 @@ def override_get_db():
 def setup_test_database():
     """Ensure database schema is ready for tests."""
     if TEST_DATABASE_URL.startswith("sqlite"):
-        Base.metadata.create_all(bind=test_engine)
+        from app.models.project import Project
+        from app.models.user import User
+
+        tables = [User.__table__, Project.__table__]
+        Base.metadata.create_all(bind=test_engine, tables=tables)
         yield
-        Base.metadata.drop_all(bind=test_engine)
+        Base.metadata.drop_all(bind=test_engine, tables=tables)
         if os.path.exists("test_darukaa.db"):
-            os.remove("test_darukaa.db")
+            try:
+                os.remove("test_darukaa.db")
+            except OSError:
+                pass
     else:
         # Schema is already migrated via Alembic in Postgres
         yield

@@ -44,6 +44,8 @@ htmlcov/
 .coverage.*
 coverage.xml
 *.cover
+*.db
+*.sqlite*
 
 # Alembic
 backend/alembic/versions/*.pyc

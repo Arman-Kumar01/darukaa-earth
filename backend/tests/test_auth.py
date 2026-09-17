@@ -68,24 +68,26 @@ class TestUserLogin:
 
     def test_login_success(self, client: TestClient, registered_user):
         """User can log in with correct credentials."""
+        email = registered_user["user"]["email"]
         response = client.post(
             "/api/auth/login",
             json={
-                "email": "testuser@example.com",
+                "email": email,
                 "password": "TestPassword123",
             },
         )
         assert response.status_code == 200
         data = response.json()
         assert "access_token" in data
-        assert data["user"]["email"] == "testuser@example.com"
+        assert data["user"]["email"] == email
 
     def test_login_wrong_password(self, client: TestClient, registered_user):
         """Login fails with incorrect password."""
+        email = registered_user["user"]["email"]
         response = client.post(
             "/api/auth/login",
             json={
-                "email": "testuser@example.com",
+                "email": email,
                 "password": "WrongPassword!",
             },
         )
@@ -103,12 +105,12 @@ class TestUserLogin:
 class TestProtectedRoutes:
     """Test that protected routes require authentication."""
 
-    def test_get_me_with_token(self, client: TestClient, auth_headers):
+    def test_get_me_with_token(self, client: TestClient, registered_user, auth_headers):
         """Authenticated user can retrieve their profile."""
         response = client.get("/api/auth/me", headers=auth_headers)
         assert response.status_code == 200
         data = response.json()
-        assert data["email"] == "testuser@example.com"
+        assert data["email"] == registered_user["user"]["email"]
 
     def test_get_me_without_token(self, client: TestClient):
         """Unauthenticated request to /me returns 401."""

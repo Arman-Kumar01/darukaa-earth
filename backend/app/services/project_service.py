@@ -125,7 +125,7 @@ def delete_project(db: Session, project_id: int) -> dict:
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Project {project_id} not found.",
         )
-    db.delete(project)
+    db.query(Project).filter(Project.id == project_id).delete(synchronize_session=False)
     db.commit()
     logger.info(f"Project deleted: id={project_id}")
     return {"detail": "Project deleted successfully."}
