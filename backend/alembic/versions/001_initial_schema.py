@@ -22,7 +22,6 @@ depends_on: str | Sequence[str] | None = None
 def upgrade() -> None:
     # Enable PostGIS extension (idempotent)
     op.execute("CREATE EXTENSION IF NOT EXISTS postgis")
-    op.execute("CREATE EXTENSION IF NOT EXISTS postgis_topology")
 
     # --- users ---
     op.create_table(

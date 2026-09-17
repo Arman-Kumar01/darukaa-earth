@@ -31,7 +31,7 @@ class TestUserRegistration:
             "/api/auth/register",
             json={
                 "name": "Another User",
-                "email": "testuser@example.com",  # same as fixture
+                "email": registered_user["user"]["email"],
                 "password": "AnotherPass123",
             },
         )

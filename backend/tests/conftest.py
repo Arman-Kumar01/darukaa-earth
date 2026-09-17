@@ -33,16 +33,16 @@ def override_get_db():
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_database():
-    """Create all tables for tests (SQLite, no PostGIS)."""
-    # For SQLite testing, we need to handle the geometry column differently
-    # We'll create tables without the geometry column for unit tests
-    Base.metadata.create_all(bind=test_engine)
-    yield
-    Base.metadata.drop_all(bind=test_engine)
-    import os
-
-    if os.path.exists("test_darukaa.db"):
-        os.remove("test_darukaa.db")
+    """Ensure database schema is ready for tests."""
+    if TEST_DATABASE_URL.startswith("sqlite"):
+        Base.metadata.create_all(bind=test_engine)
+        yield
+        Base.metadata.drop_all(bind=test_engine)
+        if os.path.exists("test_darukaa.db"):
+            os.remove("test_darukaa.db")
+    else:
+        # Schema is already migrated via Alembic in Postgres
+        yield
 
 
 @pytest.fixture
@@ -68,11 +68,14 @@ def client():
 @pytest.fixture
 def registered_user(client):
     """Register and return a test user with token."""
+    import uuid
+
+    email = f"test_{uuid.uuid4().hex[:8]}@example.com"
     response = client.post(
         "/api/auth/register",
         json={
             "name": "Test User",
-            "email": "testuser@example.com",
+            "email": email,
             "password": "TestPassword123",
         },
     )
