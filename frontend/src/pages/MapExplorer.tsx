@@ -66,6 +66,7 @@ export default function MapExplorer() {
     map.current = m;
 
     m.on('load', () => {
+      m.resize();
       // Add source (initially empty)
       m.addSource('sites', {
         type: 'geojson',
@@ -210,7 +211,11 @@ export default function MapExplorer() {
               </div>
             </div>
           ) : (
-            <div ref={mapContainer} className="absolute inset-0" />
+            <div
+              ref={mapContainer}
+              className="w-full h-full"
+              style={{ width: '100%', height: '100%' }}
+            />
           )}
 
           {/* Legend */}

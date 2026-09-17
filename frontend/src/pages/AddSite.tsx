@@ -62,6 +62,23 @@ export default function AddSite() {
     map.current = m;
     draw.current = drawControl;
 
+    // Trigger resize on load and idle to guarantee proper canvas dimensions
+    m.on('load', () => {
+      m.resize();
+    });
+    m.on('idle', () => {
+      m.resize();
+    });
+
+    // ResizeObserver ensures canvas keeps matching container dimensions across layout reflows
+    let resizeObserver: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined' && mapContainer.current) {
+      resizeObserver = new ResizeObserver(() => {
+        m.resize();
+      });
+      resizeObserver.observe(mapContainer.current);
+    }
+
     // Listen for polygon creation/updates
     const updateGeometry = () => {
       const data = drawControl.getAll();
@@ -79,6 +96,7 @@ export default function AddSite() {
     m.on('draw.delete', updateGeometry);
 
     return () => {
+      resizeObserver?.disconnect();
       m.remove();
       map.current = null;
       draw.current = null;
@@ -87,6 +105,7 @@ export default function AddSite() {
 
   const startDrawing = () => {
     if (draw.current) {
+      map.current?.resize();
       draw.current.changeMode('draw_polygon');
       setDrawMode(true);
       toast('Click the map to place polygon vertices. Double-click to finish.', { icon: '✏️' });
@@ -247,7 +266,7 @@ export default function AddSite() {
 
         {/* Map */}
         <div className="lg:col-span-3">
-          <div className="relative h-[600px] rounded-xl overflow-hidden border border-slate-800">
+          <div className="relative h-[600px] w-full rounded-xl overflow-hidden border border-slate-800 bg-slate-950">
             {!MAPBOX_TOKEN ? (
               <div className="absolute inset-0 flex items-center justify-center bg-slate-900 text-slate-500 text-sm text-center p-8">
                 <div>
@@ -257,9 +276,13 @@ export default function AddSite() {
               </div>
             ) : (
               <>
-                <div ref={mapContainer} className="absolute inset-0" />
+                <div
+                  ref={mapContainer}
+                  className="w-full h-full min-h-[600px]"
+                  style={{ width: '100%', height: '100%', minHeight: '600px' }}
+                />
                 {/* Map instruction overlay */}
-                <div className="absolute top-4 left-4 bg-slate-900/90 backdrop-blur-sm px-3 py-2 rounded-lg text-xs text-slate-400 pointer-events-none">
+                <div className="absolute top-4 left-4 bg-slate-900/90 backdrop-blur-sm px-3 py-2 rounded-lg text-xs text-slate-400 pointer-events-none z-10">
                   {drawMode
                     ? '🖱 Click to place vertices · Double-click to finish'
                     : drawnGeometry

@@ -58,6 +58,7 @@ export default function ProjectDetails() {
     map.current = m;
 
     m.on('load', () => {
+      m.resize();
       // Load site GeoJSON
       sitesService.getMapSites(parseInt(projectId!)).then((geojson) => {
         if (geojson.features.length === 0) return;
@@ -184,7 +185,11 @@ export default function ProjectDetails() {
                 Add VITE_MAPBOX_TOKEN to .env to enable map
               </div>
             ) : (
-              <div ref={mapContainer} className="absolute inset-0" />
+              <div
+                ref={mapContainer}
+                className="w-full h-full min-h-[320px]"
+                style={{ width: '100%', height: '100%', minHeight: '320px' }}
+              />
             )}
             {sites.length === 0 && MAPBOX_TOKEN && (
               <div className="absolute bottom-4 left-4 bg-slate-900/80 backdrop-blur-sm px-3 py-2 rounded-lg text-xs text-slate-400">
