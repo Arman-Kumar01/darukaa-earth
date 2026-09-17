@@ -581,18 +581,25 @@ VITE_MAPBOX_TOKEN      # Mapbox public token (for CI builds)
 
 ### Frontend → Vercel
 
+The frontend is deployed independently on Vercel from the `frontend/` directory (the FastAPI backend runs on Render).
+
+#### Option A: Automatic Deployments via GitHub Integration (Recommended)
+1. In the [Vercel Dashboard](https://vercel.com/dashboard), click **Add New...** → **Project**
+2. Import your GitHub repository: `darukaa-earth`
+3. Configure the Project Settings:
+   - **Framework Preset**: `Vite`
+   - **Root Directory**: `frontend` (click "Edit" and choose `frontend`)
+4. Add Environment Variables:
+   - `VITE_API_BASE_URL`: `https://darukaa-earth-api.onrender.com` (or your Render backend URL)
+   - `VITE_MAPBOX_TOKEN`: `pk.your_mapbox_public_token`
+5. Click **Deploy**. Vercel will automatically build and deploy the React/Vite frontend on every push to `main`.
+
+#### Option B: Via Vercel CLI
 ```bash
 # Install Vercel CLI
 npm i -g vercel
 
 cd frontend
-
-# First-time setup
-vercel
-
-# Set environment variables in Vercel dashboard:
-# VITE_MAPBOX_TOKEN   = pk.your_token
-# VITE_API_BASE_URL   = https://your-backend.onrender.com
 
 # Deploy to production
 vercel --prod
