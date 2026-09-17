@@ -21,17 +21,22 @@ logger = logging.getLogger(__name__)
 
 def _enrich_project_response(project: Project, db: Session) -> ProjectResponse:
     """Add computed fields (site_count, total_area) to a project response."""
-    site_stats = (
-        db.query(
-            func.count(Site.id).label("site_count"),
-            func.coalesce(func.sum(Site.area_hectares), 0.0).label("total_area"),
-        )
-        .filter(Site.project_id == project.id)
-        .one()
-    )
     resp = ProjectResponse.model_validate(project)
-    resp.site_count = site_stats.site_count
-    resp.total_area_hectares = float(site_stats.total_area)
+    try:
+        site_stats = (
+            db.query(
+                func.count(Site.id).label("site_count"),
+                func.coalesce(func.sum(Site.area_hectares), 0.0).label("total_area"),
+            )
+            .filter(Site.project_id == project.id)
+            .one()
+        )
+        resp.site_count = site_stats.site_count
+        resp.total_area_hectares = float(site_stats.total_area)
+    except Exception:
+        db.rollback()
+        resp.site_count = 0
+        resp.total_area_hectares = 0.0
     return resp
 
 
