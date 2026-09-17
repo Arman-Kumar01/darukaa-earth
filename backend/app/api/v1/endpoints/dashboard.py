@@ -1,4 +1,5 @@
 """Dashboard endpoint: aggregated KPI summary."""
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 

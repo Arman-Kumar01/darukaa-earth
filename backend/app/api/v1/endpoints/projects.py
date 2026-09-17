@@ -1,5 +1,4 @@
 """Project CRUD endpoints."""
-from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
@@ -28,9 +27,9 @@ router = APIRouter()
 def list_projects(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    search: Optional[str] = Query(None, description="Search by name or region"),
-    status: Optional[str] = Query(None, description="Filter by status"),
-    project_type: Optional[str] = Query(None, description="Filter by type"),
+    search: str | None = Query(None, description="Search by name or region"),
+    status: str | None = Query(None, description="Filter by status"),
+    project_type: str | None = Query(None, description="Filter by type"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> ProjectListResponse:

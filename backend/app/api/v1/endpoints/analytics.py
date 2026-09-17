@@ -1,5 +1,4 @@
 """Analytics endpoints: site metrics and time-series charts."""
-from typing import List
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
@@ -37,7 +36,7 @@ def site_analytics(
 
 @router.get(
     "/sites/{site_id}/metrics",
-    response_model=List[MetricPoint],
+    response_model=list[MetricPoint],
     summary="Get raw site metric time-series",
 )
 def site_metrics(
@@ -45,13 +44,13 @@ def site_metrics(
     limit: int = Query(24, ge=1, le=60),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
-) -> List[MetricPoint]:
+) -> list[MetricPoint]:
     return get_site_metrics(db, site_id, limit)
 
 
 @router.get(
     "/sites/{site_id}/monitoring-events",
-    response_model=List[MonitoringEventResponse],
+    response_model=list[MonitoringEventResponse],
     summary="Get monitoring events for a site",
 )
 def site_monitoring_events(
@@ -59,5 +58,5 @@ def site_monitoring_events(
     limit: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
-) -> List[MonitoringEventResponse]:
+) -> list[MonitoringEventResponse]:
     return get_monitoring_events(db, site_id, limit)

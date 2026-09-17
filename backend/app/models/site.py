@@ -1,7 +1,7 @@
 """Site model with PostGIS geometry."""
+
 import enum
 from datetime import date, datetime
-from typing import Optional
 
 from geoalchemy2 import Geometry
 from sqlalchemy import (
@@ -46,7 +46,7 @@ class Site(Base):
         Integer, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[SiteStatus] = mapped_column(
         Enum(SiteStatus), default=SiteStatus.active, nullable=False
     )
@@ -59,11 +59,11 @@ class Site(Base):
     )
 
     # Derived spatial attributes — calculated by PostGIS on creation
-    area_hectares: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    centroid_lat: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    centroid_lng: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    area_hectares: Mapped[float | None] = mapped_column(Float, nullable=True)
+    centroid_lat: Mapped[float | None] = mapped_column(Float, nullable=True)
+    centroid_lng: Mapped[float | None] = mapped_column(Float, nullable=True)
 
-    monitoring_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    monitoring_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

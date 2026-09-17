@@ -1,6 +1,7 @@
 """Site Pydantic schemas with GeoJSON geometry handling."""
+
 from datetime import date, datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -11,13 +12,11 @@ class GeoJSONPolygon(BaseModel):
     """GeoJSON Polygon geometry."""
 
     type: str = Field(..., pattern="^Polygon$")
-    coordinates: List[List[List[float]]]
+    coordinates: list[list[list[float]]]
 
     @field_validator("coordinates")
     @classmethod
-    def validate_polygon_coordinates(
-        cls, v: List[List[List[float]]]
-    ) -> List[List[List[float]]]:
+    def validate_polygon_coordinates(cls, v: list[list[list[float]]]) -> list[list[list[float]]]:
         """Validate that the polygon has at least 4 coordinate pairs (closed ring)."""
         if not v or len(v) == 0:
             raise ValueError("Polygon must have at least one ring")
@@ -41,19 +40,19 @@ class SiteCreate(BaseModel):
 
     project_id: int
     name: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = None
+    description: str | None = None
     status: SiteStatus = SiteStatus.active
-    monitoring_date: Optional[date] = None
+    monitoring_date: date | None = None
     geometry: GeoJSONPolygon
 
 
 class SiteUpdate(BaseModel):
     """Schema for updating site metadata (geometry cannot be changed via this endpoint)."""
 
-    name: Optional[str] = Field(None, min_length=1, max_length=255)
-    description: Optional[str] = None
-    status: Optional[SiteStatus] = None
-    monitoring_date: Optional[date] = None
+    name: str | None = Field(None, min_length=1, max_length=255)
+    description: str | None = None
+    status: SiteStatus | None = None
+    monitoring_date: date | None = None
 
 
 class SiteResponse(BaseModel):
@@ -62,18 +61,18 @@ class SiteResponse(BaseModel):
     id: int
     project_id: int
     name: str
-    description: Optional[str]
+    description: str | None
     status: SiteStatus
-    geometry: Optional[Dict[str, Any]] = None
-    area_hectares: Optional[float]
-    centroid_lat: Optional[float]
-    centroid_lng: Optional[float]
-    monitoring_date: Optional[date]
+    geometry: dict[str, Any] | None = None
+    area_hectares: float | None
+    centroid_lat: float | None
+    centroid_lng: float | None
+    monitoring_date: date | None
     created_at: datetime
     updated_at: datetime
     # Aggregated from metrics
-    latest_carbon_value: Optional[float] = None
-    latest_biodiversity_score: Optional[float] = None
+    latest_carbon_value: float | None = None
+    latest_biodiversity_score: float | None = None
 
     model_config = {"from_attributes": True}
 
@@ -81,7 +80,7 @@ class SiteResponse(BaseModel):
 class SiteListResponse(BaseModel):
     """Paginated list of sites."""
 
-    data: List[SiteResponse]
+    data: list[SiteResponse]
     total: int
     page: int
     page_size: int
@@ -93,12 +92,12 @@ class SiteGeoJSONFeature(BaseModel):
 
     type: str = "Feature"
     id: int
-    geometry: Dict[str, Any]
-    properties: Dict[str, Any]
+    geometry: dict[str, Any]
+    properties: dict[str, Any]
 
 
 class SiteGeoJSONCollection(BaseModel):
     """GeoJSON FeatureCollection for map layers."""
 
     type: str = "FeatureCollection"
-    features: List[SiteGeoJSONFeature]
+    features: list[SiteGeoJSONFeature]

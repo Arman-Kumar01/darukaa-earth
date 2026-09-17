@@ -1,8 +1,9 @@
 """Database connection and session management."""
-import logging
-from typing import Generator
 
-from sqlalchemy import create_engine, event, text
+import logging
+from collections.abc import Generator
+
+from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
 from app.core.config import settings

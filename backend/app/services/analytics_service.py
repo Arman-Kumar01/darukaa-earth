@@ -1,6 +1,6 @@
 """Analytics service: time-series metrics and dashboard aggregations."""
+
 import logging
-from typing import List, Optional
 
 from fastapi import HTTPException, status
 from sqlalchemy import func
@@ -20,16 +20,16 @@ from app.schemas.analytics import (
 logger = logging.getLogger(__name__)
 
 
-def get_site_analytics(
-    db: Session, site_id: int, limit: int = 24
-) -> SiteAnalyticsResponse:
+def get_site_analytics(db: Session, site_id: int, limit: int = 24) -> SiteAnalyticsResponse:
     """
     Return time-series analytics for a specific site.
     Ordered by recorded_at ascending for charting (oldest first).
     """
     site = db.query(Site).filter(Site.id == site_id).first()
     if not site:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Site {site_id} not found.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"Site {site_id} not found."
+        )
 
     metrics = (
         db.query(SiteMetric)
@@ -84,9 +84,7 @@ def get_site_analytics(
     )
 
 
-def get_site_metrics(
-    db: Session, site_id: int, limit: int = 24
-) -> List[MetricPoint]:
+def get_site_metrics(db: Session, site_id: int, limit: int = 24) -> list[MetricPoint]:
     """Return raw metric points for a site."""
     metrics = (
         db.query(SiteMetric)
@@ -115,9 +113,7 @@ def get_dashboard_summary(db: Session) -> DashboardSummary:
     total_projects = db.query(func.count(Project.id)).scalar() or 0
     total_sites = db.query(func.count(Site.id)).scalar() or 0
     total_area = db.query(func.coalesce(func.sum(Site.area_hectares), 0.0)).scalar() or 0.0
-    active_sites = (
-        db.query(func.count(Site.id)).filter(Site.status == "active").scalar() or 0
-    )
+    active_sites = db.query(func.count(Site.id)).filter(Site.status == "active").scalar() or 0
 
     # Average biodiversity from latest metric per site
     latest_metrics_subq = (
@@ -144,14 +140,14 @@ def get_dashboard_summary(db: Session) -> DashboardSummary:
         avg_biodiversity = sum(m.biodiversity_score for m in latest_metric_values) / len(
             latest_metric_values
         )
-        total_carbon = sum(m.carbon_value * (
-            db.query(Site.area_hectares).filter(Site.id == m.site_id).scalar() or 1.0
-        ) for m in latest_metric_values)
+        total_carbon = sum(
+            m.carbon_value
+            * (db.query(Site.area_hectares).filter(Site.id == m.site_id).scalar() or 1.0)
+            for m in latest_metric_values
+        )
 
     # Recent projects (last 5)
-    recent_projects_objs = (
-        db.query(Project).order_by(Project.created_at.desc()).limit(5).all()
-    )
+    recent_projects_objs = db.query(Project).order_by(Project.created_at.desc()).limit(5).all()
     recent_projects = [
         {
             "id": p.id,
@@ -174,9 +170,7 @@ def get_dashboard_summary(db: Session) -> DashboardSummary:
         .group_by(Project.project_type)
         .all()
     )
-    area_by_project_type = {
-        row.project_type: float(row.total_area) for row in area_by_type_rows
-    }
+    area_by_project_type = {row.project_type: float(row.total_area) for row in area_by_type_rows}
 
     return DashboardSummary(
         total_projects=total_projects,
@@ -192,7 +186,7 @@ def get_dashboard_summary(db: Session) -> DashboardSummary:
 
 def get_monitoring_events(
     db: Session, site_id: int, limit: int = 20
-) -> List[MonitoringEventResponse]:
+) -> list[MonitoringEventResponse]:
     """Return recent monitoring events for a site."""
     events = (
         db.query(MonitoringEvent)

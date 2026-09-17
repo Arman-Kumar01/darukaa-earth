@@ -1,5 +1,5 @@
 """Tests for project endpoints."""
-import pytest
+
 from fastapi.testclient import TestClient
 
 
@@ -115,9 +115,7 @@ class TestProjectCRUD:
             headers=auth_headers,
         )
 
-        response = client.get(
-            "/api/projects?search=Unique+Search+Term+XYZ", headers=auth_headers
-        )
+        response = client.get("/api/projects?search=Unique+Search+Term+XYZ", headers=auth_headers)
         assert response.status_code == 200
         data = response.json()
         assert data["total"] >= 1

@@ -1,7 +1,7 @@
 """Project service: business logic for project CRUD."""
+
 import logging
 import math
-from typing import Optional
 
 from fastapi import HTTPException, status
 from sqlalchemy import func
@@ -39,9 +39,9 @@ def get_projects(
     db: Session,
     page: int = 1,
     page_size: int = 20,
-    search: Optional[str] = None,
-    status: Optional[str] = None,
-    project_type: Optional[str] = None,
+    search: str | None = None,
+    status: str | None = None,
+    project_type: str | None = None,
 ) -> ProjectListResponse:
     """Return a paginated, filtered list of projects."""
     query = db.query(Project)
@@ -99,9 +99,7 @@ def create_project(db: Session, payload: ProjectCreate, user_id: int) -> Project
     return _enrich_project_response(project, db)
 
 
-def update_project(
-    db: Session, project_id: int, payload: ProjectUpdate
-) -> ProjectResponse:
+def update_project(db: Session, project_id: int, payload: ProjectUpdate) -> ProjectResponse:
     """Update project fields. Only provided fields are changed."""
     project = db.query(Project).filter(Project.id == project_id).first()
     if not project:

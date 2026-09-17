@@ -1,6 +1,6 @@
 """Authentication service: registration, login, and user identity."""
+
 import logging
-from typing import Optional
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -21,12 +21,12 @@ logger = logging.getLogger(__name__)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 
-def get_user_by_email(db: Session, email: str) -> Optional[User]:
+def get_user_by_email(db: Session, email: str) -> User | None:
     """Fetch a user by email address."""
     return db.query(User).filter(User.email == email).first()
 
 
-def get_user_by_id(db: Session, user_id: int) -> Optional[User]:
+def get_user_by_id(db: Session, user_id: int) -> User | None:
     """Fetch a user by primary key."""
     return db.query(User).filter(User.id == user_id).first()
 
@@ -107,14 +107,14 @@ def get_current_user(
     if payload is None:
         raise credentials_exception
 
-    user_id_str: Optional[str] = payload.get("sub")
+    user_id_str: str | None = payload.get("sub")
     if user_id_str is None:
         raise credentials_exception
 
     try:
         user_id = int(user_id_str)
     except ValueError:
-        raise credentials_exception
+        raise credentials_exception from None
 
     user = get_user_by_id(db, user_id)
     if user is None:

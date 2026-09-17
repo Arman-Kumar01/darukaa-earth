@@ -1,5 +1,4 @@
 """Sites endpoints: CRUD with PostGIS geometry."""
-from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
@@ -26,10 +25,10 @@ router = APIRouter()
     description="Returns paginated sites with optional project and status filtering.",
 )
 def list_sites(
-    project_id: Optional[int] = Query(None, description="Filter by project ID"),
+    project_id: int | None = Query(None, description="Filter by project ID"),
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=200),
-    status: Optional[str] = Query(None, description="Filter by status"),
+    status: str | None = Query(None, description="Filter by status"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> SiteListResponse:

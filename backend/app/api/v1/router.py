@@ -1,4 +1,5 @@
 """Main API v1 router — aggregates all endpoint routers."""
+
 from fastapi import APIRouter
 
 from app.api.v1.endpoints import analytics, auth, dashboard, map_endpoints, projects, sites

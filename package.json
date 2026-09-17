@@ -15,6 +15,6 @@
   },
   "lint-staged": {
     "frontend/src/**/*.{ts,tsx}": "npm --prefix frontend run lint --",
-    "backend/**/*.py": ["ruff check --fix", "ruff format"]
+    "backend/**/*.py": ["python -m ruff check --fix", "python -m ruff format"]
   }
 }

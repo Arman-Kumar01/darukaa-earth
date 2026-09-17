@@ -1,4 +1,5 @@
 """Site metrics model for time-series analytics."""
+
 from datetime import datetime
 
 from sqlalchemy import DateTime, Float, ForeignKey, Integer, func
@@ -27,12 +28,8 @@ class SiteMetric(Base):
 
     # Environmental metrics (synthetic for demo)
     carbon_value: Mapped[float] = mapped_column(Float, nullable=False, comment="tCO2e/ha")
-    biodiversity_score: Mapped[float] = mapped_column(
-        Float, nullable=False, comment="0-100 index"
-    )
-    vegetation_index: Mapped[float] = mapped_column(
-        Float, nullable=False, comment="NDVI proxy 0-1"
-    )
+    biodiversity_score: Mapped[float] = mapped_column(Float, nullable=False, comment="0-100 index")
+    vegetation_index: Mapped[float] = mapped_column(Float, nullable=False, comment="NDVI proxy 0-1")
     monitoring_score: Mapped[float] = mapped_column(
         Float, nullable=False, comment="0-100 monitoring completeness"
     )

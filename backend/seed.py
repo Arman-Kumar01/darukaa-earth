@@ -24,7 +24,7 @@ To reset: drop and recreate the database, run migrations, then re-seed.
 
 import random
 import sys
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 # Add backend to Python path
@@ -32,9 +32,8 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from sqlalchemy.orm import Session
 
-from app.core.config import settings
 from app.core.security import get_password_hash
-from app.db.database import SessionLocal, engine
+from app.db.database import SessionLocal
 from app.models import MonitoringEvent, Project, Site, SiteMetric, User
 from app.models.monitoring_event import EventType
 from app.models.project import ProjectStatus, ProjectType
@@ -229,7 +228,7 @@ def generate_metric_series(
     - Monitoring score gradually improves (programme maturity).
     """
     if start_date is None:
-        start_date = datetime(2023, 1, 1, tzinfo=timezone.utc)
+        start_date = datetime(2023, 1, 1, tzinfo=UTC)
 
     metrics = []
     carbon = base_carbon
@@ -372,7 +371,6 @@ def seed(db: Session) -> None:
             wkt_geom = make_polygon(
                 site_data["center"][0], site_data["center"][1], site_data["size"]
             )
-            clean_wkt = wkt_geom.replace("SRID=4326;", "")
 
             area_ha, centroid_lat, centroid_lng = compute_spatial_properties(db, wkt_geom)
 
@@ -393,9 +391,7 @@ def seed(db: Session) -> None:
             print(f"    📍 Site: {site.name} ({area_ha:.1f} ha)")
 
             # Generate 18 monthly metrics
-            start = datetime(2023, 1, 1, tzinfo=timezone.utc) + timedelta(
-                days=site_start_offset * 5
-            )
+            start = datetime(2023, 1, 1, tzinfo=UTC) + timedelta(days=site_start_offset * 5)
             metrics = generate_metric_series(
                 site.id,
                 site_data["base_carbon"],
@@ -421,7 +417,7 @@ def seed(db: Session) -> None:
     total_events = db.query(MonitoringEvent).count()
 
     print("\n✅ Seed complete!")
-    print(f"   Users: 2 (admin + demo)")
+    print("   Users: 2 (admin + demo)")
     print(f"   Projects: {len(PROJECTS_DATA)}")
     print(f"   Sites: {total_sites}")
     print(f"   Metric records: {total_metrics}")

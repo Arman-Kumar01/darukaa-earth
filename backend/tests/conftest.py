@@ -1,19 +1,22 @@
 """Test configuration: fixtures and test database setup."""
+
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, event, text
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from app.db.database import Base, get_db
 from app.main import app
 
-# Use SQLite for unit tests (no PostGIS available in CI without Docker)
-# For full integration tests with PostGIS, use the docker-compose environment.
-TEST_DATABASE_URL = "sqlite:///./test_darukaa.db"
+import os
+
+# Use DATABASE_URL from environment if available (e.g. Postgres in CI), otherwise SQLite
+TEST_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./test_darukaa.db")
+connect_args = {"check_same_thread": False} if TEST_DATABASE_URL.startswith("sqlite") else {}
 
 test_engine = create_engine(
     TEST_DATABASE_URL,
-    connect_args={"check_same_thread": False},
+    connect_args=connect_args,
 )
 
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
@@ -37,6 +40,7 @@ def setup_test_database():
     yield
     Base.metadata.drop_all(bind=test_engine)
     import os
+
     if os.path.exists("test_darukaa.db"):
         os.remove("test_darukaa.db")
 

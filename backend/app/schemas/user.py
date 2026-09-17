@@ -1,6 +1,6 @@
 """User Pydantic schemas for request/response validation."""
+
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
@@ -52,4 +52,4 @@ class TokenResponse(BaseModel):
 class TokenData(BaseModel):
     """Payload extracted from JWT token."""
 
-    user_id: Optional[int] = None
+    user_id: int | None = None

@@ -1,4 +1,5 @@
 """Project model."""
+
 import enum
 from datetime import date, datetime
 from typing import Optional
@@ -33,16 +34,16 @@ class Project(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
     project_type: Mapped[ProjectType] = mapped_column(
         Enum(ProjectType), default=ProjectType.carbon, nullable=False
     )
-    region: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    region: Mapped[str | None] = mapped_column(String(255), nullable=True)
     status: Mapped[ProjectStatus] = mapped_column(
         Enum(ProjectStatus), default=ProjectStatus.active, nullable=False
     )
-    start_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
-    created_by: Mapped[Optional[int]] = mapped_column(
+    start_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    created_by: Mapped[int | None] = mapped_column(
         Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
     created_at: Mapped[datetime] = mapped_column(

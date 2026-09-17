@@ -1,5 +1,5 @@
 """Tests for authentication endpoints."""
-import pytest
+
 from fastapi.testclient import TestClient
 
 
@@ -117,9 +117,7 @@ class TestProtectedRoutes:
 
     def test_get_me_invalid_token(self, client: TestClient):
         """Invalid JWT token returns 401."""
-        response = client.get(
-            "/api/auth/me", headers={"Authorization": "Bearer invalid-token"}
-        )
+        response = client.get("/api/auth/me", headers={"Authorization": "Bearer invalid-token"})
         assert response.status_code == 401
 
     def test_projects_requires_auth(self, client: TestClient):

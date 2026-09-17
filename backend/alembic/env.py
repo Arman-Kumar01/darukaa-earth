@@ -1,19 +1,20 @@
 """Alembic environment configuration."""
+
 import sys
 from logging.config import fileConfig
 from pathlib import Path
 
-from alembic import context
 from sqlalchemy import engine_from_config, pool
+
+from alembic import context
 
 # Add backend to Python path so models can be imported
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from app.core.config import settings
-from app.db.database import Base
-
 # Import all models so Alembic can detect them for autogenerate
 import app.models  # noqa: F401
+from app.core.config import settings
+from app.db.database import Base
 
 # Alembic Config object
 config = context.config

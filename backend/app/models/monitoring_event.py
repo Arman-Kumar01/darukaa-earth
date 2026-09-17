@@ -1,9 +1,9 @@
 """Monitoring event model for site audit trail."""
+
 import enum
 from datetime import date, datetime
-from typing import Optional
 
-from sqlalchemy import Date, DateTime, Enum, ForeignKey, Integer, String, Text, func
+from sqlalchemy import Date, DateTime, Enum, ForeignKey, Integer, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.database import Base
@@ -33,7 +33,7 @@ class MonitoringEvent(Base):
     event_type: Mapped[EventType] = mapped_column(
         Enum(EventType), default=EventType.field_survey, nullable=False
     )
-    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

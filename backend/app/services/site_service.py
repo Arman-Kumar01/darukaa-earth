@@ -1,11 +1,10 @@
 """Site service: business logic for site CRUD with PostGIS geometry."""
+
 import json
 import logging
 import math
-from typing import Any, Dict, List, Optional
 
 from fastapi import HTTPException, status
-from geoalchemy2.functions import ST_Area, ST_AsGeoJSON, ST_Centroid, ST_GeomFromGeoJSON, ST_X, ST_Y
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -24,7 +23,7 @@ from app.schemas.site import (
 logger = logging.getLogger(__name__)
 
 
-def _get_latest_metrics(db: Session, site_id: int) -> tuple[Optional[float], Optional[float]]:
+def _get_latest_metrics(db: Session, site_id: int) -> tuple[float | None, float | None]:
     """Return the most recent carbon and biodiversity values for a site."""
     latest = (
         db.query(SiteMetric)
@@ -43,8 +42,7 @@ def _site_to_response(site: Site, db: Session) -> SiteResponse:
     if site.geometry is not None:
         try:
             result = db.execute(
-                text("SELECT ST_AsGeoJSON(:geom)"),
-                {"geom": site.geometry}
+                text("SELECT ST_AsGeoJSON(:geom)"), {"geom": site.geometry}
             ).scalar()
             if result:
                 geojson = json.loads(result)
@@ -60,7 +58,9 @@ def _site_to_response(site: Site, db: Session) -> SiteResponse:
     return resp
 
 
-def _compute_spatial_properties(db: Session, geojson_str: str) -> tuple[float, Optional[float], Optional[float]]:
+def _compute_spatial_properties(
+    db: Session, geojson_str: str
+) -> tuple[float, float | None, float | None]:
     """Use PostGIS to calculate area in hectares and centroid coordinates."""
     try:
         result = db.execute(
@@ -70,7 +70,7 @@ def _compute_spatial_properties(db: Session, geojson_str: str) -> tuple[float, O
                     ST_Y(ST_Centroid(ST_GeomFromGeoJSON(:geojson))) AS centroid_lat,
                     ST_X(ST_Centroid(ST_GeomFromGeoJSON(:geojson))) AS centroid_lng
             """),
-            {"geojson": geojson_str}
+            {"geojson": geojson_str},
         ).first()
 
         if result:
@@ -86,10 +86,10 @@ def _compute_spatial_properties(db: Session, geojson_str: str) -> tuple[float, O
 
 def get_sites(
     db: Session,
-    project_id: Optional[int] = None,
+    project_id: int | None = None,
     page: int = 1,
     page_size: int = 50,
-    status_filter: Optional[str] = None,
+    status_filter: str | None = None,
 ) -> SiteListResponse:
     """Return paginated sites, optionally filtered by project."""
     query = db.query(Site)
@@ -115,7 +115,9 @@ def get_site(db: Session, site_id: int) -> SiteResponse:
     """Get a single site by ID."""
     site = db.query(Site).filter(Site.id == site_id).first()
     if not site:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Site {site_id} not found.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"Site {site_id} not found."
+        )
     return _site_to_response(site, db)
 
 
@@ -131,7 +133,9 @@ def create_site(db: Session, payload: SiteCreate) -> SiteResponse:
     """
     project = db.query(Project).filter(Project.id == payload.project_id).first()
     if not project:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Project {payload.project_id} not found.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"Project {payload.project_id} not found."
+        )
 
     geojson_str = json.dumps(payload.geometry.model_dump())
     area_ha, centroid_lat, centroid_lng = _compute_spatial_properties(db, geojson_str)
@@ -167,7 +171,9 @@ def update_site(db: Session, site_id: int, payload: SiteUpdate) -> SiteResponse:
     """Update site metadata fields."""
     site = db.query(Site).filter(Site.id == site_id).first()
     if not site:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Site {site_id} not found.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"Site {site_id} not found."
+        )
 
     update_data = payload.model_dump(exclude_unset=True)
     for key, value in update_data.items():
@@ -182,7 +188,9 @@ def delete_site(db: Session, site_id: int) -> dict:
     """Delete a site and its metrics (cascade)."""
     site = db.query(Site).filter(Site.id == site_id).first()
     if not site:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Site {site_id} not found.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"Site {site_id} not found."
+        )
     db.delete(site)
     db.commit()
     return {"detail": "Site deleted successfully."}
@@ -190,8 +198,8 @@ def delete_site(db: Session, site_id: int) -> dict:
 
 def get_sites_as_geojson(
     db: Session,
-    project_id: Optional[int] = None,
-    status_filter: Optional[str] = None,
+    project_id: int | None = None,
+    status_filter: str | None = None,
 ) -> SiteGeoJSONCollection:
     """Return all sites as a GeoJSON FeatureCollection for map rendering."""
     query = db.query(Site)
@@ -208,8 +216,7 @@ def get_sites_as_geojson(
         if site.geometry is not None:
             try:
                 result = db.execute(
-                    text("SELECT ST_AsGeoJSON(:geom)"),
-                    {"geom": site.geometry}
+                    text("SELECT ST_AsGeoJSON(:geom)"), {"geom": site.geometry}
                 ).scalar()
                 if result:
                     geojson = json.loads(result)
@@ -233,7 +240,9 @@ def get_sites_as_geojson(
                     "area_hectares": site.area_hectares,
                     "centroid_lat": site.centroid_lat,
                     "centroid_lng": site.centroid_lng,
-                    "monitoring_date": site.monitoring_date.isoformat() if site.monitoring_date else None,
+                    "monitoring_date": site.monitoring_date.isoformat()
+                    if site.monitoring_date
+                    else None,
                     "latest_carbon_value": latest_carbon,
                     "latest_biodiversity_score": latest_biodiversity,
                 },

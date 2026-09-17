@@ -1,5 +1,4 @@
 """Map endpoints: GeoJSON data for Mapbox layers."""
-from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
@@ -23,8 +22,8 @@ router = APIRouter()
     ),
 )
 def map_sites_geojson(
-    project_id: Optional[int] = Query(None, description="Filter by project ID"),
-    status: Optional[str] = Query(None, description="Filter by site status"),
+    project_id: int | None = Query(None, description="Filter by project ID"),
+    status: str | None = Query(None, description="Filter by site status"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> SiteGeoJSONCollection:

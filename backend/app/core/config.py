@@ -1,6 +1,6 @@
 """Application configuration using Pydantic Settings."""
+
 from functools import lru_cache
-from typing import List
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     backend_port: int = 8000
 
     @property
-    def cors_origins_list(self) -> List[str]:
+    def cors_origins_list(self) -> list[str]:
         """Parse comma-separated CORS origins into a list."""
         return [origin.strip() for origin in self.cors_origins.split(",")]
 
