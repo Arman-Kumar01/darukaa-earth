@@ -5,9 +5,8 @@ import { analyticsService } from '../services/analytics';
 import type { DashboardSummary } from '../types';
 import {
   formatArea,
-  formatCarbonValue,
-  formatBioScore,
   formatDate,
+  formatBioScore,
   getProjectTypeLabel,
   getStatusBadgeClass,
 } from '../utils';

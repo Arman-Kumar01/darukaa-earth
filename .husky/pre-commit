@@ -1,1 +1,5 @@
-npm test
+#!/bin/sh
+# Darukaa.Earth pre-commit hook
+# Runs lint-staged to format and lint staged files before committing.
+
+npx lint-staged

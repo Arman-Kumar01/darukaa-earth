@@ -1,5 +1,5 @@
 // Authentication context — provides user state and auth actions throughout the app
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useState } from 'react';
 import { authService } from '../services/auth';
 import type { User } from '../types';
 

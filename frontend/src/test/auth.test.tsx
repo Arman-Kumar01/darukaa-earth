@@ -1,16 +1,16 @@
 // Frontend tests — authentication flow and component rendering
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { AuthProvider } from '../../context/AuthContext'
-import Login from '../../pages/Login'
-import Register from '../../pages/Register'
+import { AuthProvider } from '../context/AuthContext'
+import Login from '../pages/Login'
+import Register from '../pages/Register'
 
 // Mock react-hot-toast
 vi.mock('react-hot-toast', () => ({ default: { success: vi.fn(), error: vi.fn() } }))
 
 // Mock auth service
-vi.mock('../../services/auth', () => ({
+vi.mock('../services/auth', () => ({
   authService: {
     login: vi.fn(),
     register: vi.fn(),

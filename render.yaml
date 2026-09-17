@@ -1,0 +1,38 @@
+# Render deployment configuration
+# See: https://render.com/docs/render-yaml-reference
+
+services:
+  # Backend API (FastAPI + Python)
+  - type: web
+    name: darukaa-earth-api
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: >
+      alembic upgrade head &&
+      python seed.py &&
+      uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: darukaa-earth-db
+          property: connectionString
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "1440"
+      - key: CORS_ORIGINS
+        value: https://darukaa-earth.vercel.app
+      - key: ENVIRONMENT
+        value: production
+    healthCheckPath: /health
+
+# Managed PostgreSQL database with PostGIS
+databases:
+  - name: darukaa-earth-db
+    databaseName: darukaa_earth
+    user: darukaa_user
+    plan: free
+    postgresMajorVersion: 16
