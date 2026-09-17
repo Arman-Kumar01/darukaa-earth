@@ -27,7 +27,7 @@ services:
       - key: ACCESS_TOKEN_EXPIRE_MINUTES
         value: "1440"
       - key: CORS_ORIGINS
-        value: https://darukaa-earth.vercel.app
+        value: https://darukaa-earth-eight.vercel.app
       - key: ENVIRONMENT
         value: production
     healthCheckPath: /health
