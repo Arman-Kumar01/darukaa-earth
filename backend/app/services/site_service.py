@@ -36,32 +36,77 @@ def _get_latest_metrics(db: Session, site_id: int) -> tuple[float | None, float 
     return None, None
 
 
-def _site_to_response(site: Site, db: Session) -> SiteResponse:
-    """Convert a Site ORM object to a SiteResponse with GeoJSON and metrics."""
-    geojson = None
-    if site.geometry is not None:
+def _geometry_to_geojson(db: Session, site_id: int, site_geometry=None) -> dict | None:
+    """
+    Convert a site's PostGIS geometry to a GeoJSON dict.
+
+    Tries:
+    1. Direct PostGIS SQL query: SELECT ST_AsGeoJSON(geometry) FROM sites WHERE id = :site_id
+    2. Fallback to GeoAlchemy2/Shapely to_shape() if site_geometry is provided
+    """
+    try:
+        result = db.execute(
+            text("SELECT ST_AsGeoJSON(geometry) FROM sites WHERE id = :site_id"),
+            {"site_id": site_id},
+        ).scalar()
+        if result:
+            return json.loads(result)
+    except Exception as e:
+        logger.warning(f"Could not query ST_AsGeoJSON for site {site_id}: {e}")
+
+    # Fallback to Python-level conversion via Shapely/GeoAlchemy2
+    if site_geometry is not None:
         try:
-            result = db.execute(
-                text("SELECT ST_AsGeoJSON(:geom)"), {"geom": site.geometry}
-            ).scalar()
-            if result:
-                geojson = json.loads(result)
+            from geoalchemy2.elements import WKBElement
+            from geoalchemy2.shape import to_shape
+            import shapely.geometry
+
+            if isinstance(site_geometry, WKBElement):
+                shape = to_shape(site_geometry)
+                return shapely.geometry.mapping(shape)
         except Exception as e:
-            logger.warning(f"Could not serialize geometry for site {site.id}: {e}")
+            logger.debug(f"Shapely to_shape conversion fallback failed for site {site_id}: {e}")
+
+    return None
+
+
+def _site_to_response(site: Site, db: Session) -> SiteResponse:
+    """
+    Convert a Site ORM object to a SiteResponse with GeoJSON and metrics.
+
+    IMPORTANT: We explicitly exclude 'geometry' from model_validate because
+    site.geometry is a GeoAlchemy2 WKBElement (binary blob) that cannot be
+    coerced to dict | None by Pydantic. Instead, we fetch GeoJSON directly
+    from PostGIS using a targeted SQL query, with Shapely fallback.
+    """
+    geojson = _geometry_to_geojson(db, site.id, site.geometry)
 
     latest_carbon, latest_biodiversity = _get_latest_metrics(db, site.id)
 
-    resp = SiteResponse.model_validate(site)
-    resp.geometry = geojson
-    resp.latest_carbon_value = latest_carbon
-    resp.latest_biodiversity_score = latest_biodiversity
+    # Build response dict manually to avoid Pydantic failing on WKBElement
+    resp = SiteResponse(
+        id=site.id,
+        project_id=site.project_id,
+        name=site.name,
+        description=site.description,
+        status=site.status,
+        geometry=geojson,
+        area_hectares=site.area_hectares,
+        centroid_lat=site.centroid_lat,
+        centroid_lng=site.centroid_lng,
+        monitoring_date=site.monitoring_date,
+        created_at=site.created_at,
+        updated_at=site.updated_at,
+        latest_carbon_value=latest_carbon,
+        latest_biodiversity_score=latest_biodiversity,
+    )
     return resp
 
 
 def _compute_spatial_properties(
     db: Session, geojson_str: str
 ) -> tuple[float, float | None, float | None]:
-    """Use PostGIS to calculate area in hectares and centroid coordinates."""
+    """Use PostGIS to calculate area in hectares and centroid coordinates, with Shapely fallback."""
     try:
         result = db.execute(
             text("""
@@ -73,14 +118,34 @@ def _compute_spatial_properties(
             {"geojson": geojson_str},
         ).first()
 
-        if result:
+        if result and result.area_ha is not None:
             return (
                 round(float(result.area_ha), 4),
-                float(result.centroid_lat),
-                float(result.centroid_lng),
+                float(result.centroid_lat) if result.centroid_lat is not None else None,
+                float(result.centroid_lng) if result.centroid_lng is not None else None,
             )
     except Exception as e:
-        logger.error(f"Spatial calculation error: {e}")
+        logger.warning(f"PostGIS spatial calculation failed, falling back to Shapely: {e}")
+
+    # Fallback using Shapely
+    try:
+        import shapely.geometry
+
+        geom_dict = json.loads(geojson_str)
+        geom = shapely.geometry.shape(geom_dict)
+        c = geom.centroid
+        centroid_lng = round(float(c.x), 6)
+        centroid_lat = round(float(c.y), 6)
+        lat_m = 111320.0
+        lng_m = 111320.0 * math.cos(math.radians(centroid_lat))
+        coords = list(geom.exterior.coords)
+        m_coords = [(pt[0] * lng_m, pt[1] * lat_m) for pt in coords]
+        m_geom = shapely.geometry.Polygon(m_coords)
+        area_ha = round(float(m_geom.area) / 10000.0, 4)
+        return area_ha, centroid_lat, centroid_lng
+    except Exception as e:
+        logger.error(f"Shapely fallback calculation error: {e}")
+
     return 0.0, None, None
 
 
@@ -212,16 +277,8 @@ def get_sites_as_geojson(
     features = []
 
     for site in sites:
-        geojson = None
-        if site.geometry is not None:
-            try:
-                result = db.execute(
-                    text("SELECT ST_AsGeoJSON(:geom)"), {"geom": site.geometry}
-                ).scalar()
-                if result:
-                    geojson = json.loads(result)
-            except Exception:
-                pass
+        # Use direct PostGIS query or Shapely fallback to avoid WKBElement binding issues
+        geojson = _geometry_to_geojson(db, site.id, site.geometry)
 
         if geojson is None:
             continue

@@ -75,8 +75,46 @@ export function getTrendColor(trend: number | null | undefined): string {
 
 export function getApiErrorMessage(error: unknown): string {
   if (error && typeof error === 'object' && 'response' in error) {
-    const axiosError = error as { response?: { data?: { detail?: string } } };
-    return axiosError.response?.data?.detail || 'An unexpected error occurred.';
+    const axiosError = error as {
+      response?: { data?: { detail?: string | unknown[] }; status?: number };
+      message?: string;
+    };
+    const status = axiosError.response?.status;
+    const detail = axiosError.response?.data?.detail;
+
+    // Use the server's detail message if it's a plain string
+    if (detail && typeof detail === 'string') {
+      return detail;
+    }
+
+    // Map common HTTP status codes to user-friendly messages
+    switch (status) {
+      case 400:
+        return 'Invalid request. Please check your inputs.';
+      case 401:
+        return 'Your session has expired. Please log in again.';
+      case 403:
+        return 'You do not have permission to perform this action.';
+      case 404:
+        return 'The requested resource was not found.';
+      case 422:
+        return 'Validation error. Please check all required fields.';
+      case 500:
+        return 'Server error while processing your request. Please try again.';
+      case 503:
+        return 'Service temporarily unavailable. Please try again shortly.';
+      default:
+        return axiosError.message || 'An unexpected error occurred.';
+    }
   }
-  return 'Network error. Please check your connection.';
+
+  // Network-level error (no response received)
+  if (error && typeof error === 'object' && 'message' in error) {
+    const netError = error as { message?: string };
+    if (netError.message?.toLowerCase().includes('network')) {
+      return 'Network error. Please check your connection and try again.';
+    }
+  }
+
+  return 'An unexpected error occurred. Please try again.';
 }
