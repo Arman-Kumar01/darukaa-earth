@@ -32,6 +32,8 @@ export default function AddSite() {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const draw = useRef<MapboxDraw | null>(null);
+  // Initialized flag prevents duplicate Map instances under React StrictMode
+  const initialized = useRef(false);
 
   // Load project name for display
   useEffect(() => {
@@ -40,14 +42,23 @@ export default function AddSite() {
 
   // Initialize map
   useEffect(() => {
-    if (!mapContainer.current || map.current || !MAPBOX_TOKEN) return;
+    // Prevent duplicate initialization (React StrictMode double-mount, repeated renders)
+    if (initialized.current || !mapContainer.current || !MAPBOX_TOKEN) return;
 
+    if (!MAPBOX_TOKEN) {
+      if (import.meta.env.DEV) {
+        console.error('[AddSite] VITE_MAPBOX_TOKEN is not set. Map will not initialize.');
+      }
+      return;
+    }
+
+    initialized.current = true;
     mapboxgl.accessToken = MAPBOX_TOKEN;
     const m = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/satellite-streets-v12',
       zoom: 3,
-      center: [78.9629, 20.5937], // Center on India initially
+      center: [78.9629, 20.5937], // Center on India
     });
 
     const drawControl = new MapboxDraw({
@@ -62,19 +73,18 @@ export default function AddSite() {
     map.current = m;
     draw.current = drawControl;
 
-    // Trigger resize on load and idle to guarantee proper canvas dimensions
+    // Resize once on load to handle flex/grid layout settling
     m.on('load', () => {
       m.resize();
     });
-    m.on('idle', () => {
-      m.resize();
-    });
+    // NOTE: Do NOT listen to 'idle' for resize — 'idle' fires after every
+    // pan/zoom/draw and causes repeated tile requests, inflating Mapbox usage.
 
-    // ResizeObserver ensures canvas keeps matching container dimensions across layout reflows
+    // ResizeObserver handles container dimension changes without firing on map events
     let resizeObserver: ResizeObserver | null = null;
     if (typeof ResizeObserver !== 'undefined' && mapContainer.current) {
       resizeObserver = new ResizeObserver(() => {
-        m.resize();
+        map.current?.resize();
       });
       resizeObserver.observe(mapContainer.current);
     }
@@ -100,6 +110,7 @@ export default function AddSite() {
       m.remove();
       map.current = null;
       draw.current = null;
+      initialized.current = false;
     };
   }, []);
 

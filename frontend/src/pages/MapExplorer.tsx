@@ -20,6 +20,8 @@ export default function MapExplorer() {
   const navigate = useNavigate();
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
+  // Initialized flag prevents duplicate Map instances under React StrictMode
+  const initialized = useRef(false);
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
@@ -47,12 +49,20 @@ export default function MapExplorer() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { loadMapData(); }, []);
 
   // Initialize Mapbox
   useEffect(() => {
-    if (!mapContainer.current || map.current || !MAPBOX_TOKEN) return;
+    // Prevent duplicate initialization (React StrictMode double-mount, repeated renders)
+    if (initialized.current || !mapContainer.current || !MAPBOX_TOKEN) return;
 
+    if (!MAPBOX_TOKEN) {
+      if (import.meta.env.DEV) {
+        console.error('[MapExplorer] VITE_MAPBOX_TOKEN is not set. Map will not initialize.');
+      }
+      return;
+    }
+
+    initialized.current = true;
     mapboxgl.accessToken = MAPBOX_TOKEN;
     const m = new mapboxgl.Map({
       container: mapContainer.current,
@@ -101,9 +111,12 @@ export default function MapExplorer() {
         },
       });
 
-      // Load initial data
+      // Load initial data once (single API call). Also populates geojson state for the side panel.
       sitesService.getMapSites().then((data) => {
+        if (!m.getSource('sites')) return; // guard: map may have been removed
         (m.getSource('sites') as mapboxgl.GeoJSONSource).setData(data as never);
+        setGeojson(data);
+        setLoading(false);
 
         // Fit to all sites
         if (data.features.length > 0) {
@@ -135,7 +148,7 @@ export default function MapExplorer() {
       m.on('mouseleave', 'sites-fill', () => { m.getCanvas().style.cursor = ''; });
     });
 
-    return () => { m.remove(); map.current = null; };
+    return () => { m.remove(); map.current = null; initialized.current = false; };
   }, []);
 
   const handleProjectFilter = (value: string) => {

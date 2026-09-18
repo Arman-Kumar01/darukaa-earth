@@ -65,6 +65,8 @@ export default function SiteDetails() {
 
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
+  // Initialized flag prevents duplicate Map instances under React StrictMode
+  const initialized = useRef(false);
 
   useEffect(() => {
     const id = parseInt(siteId!);
@@ -84,8 +86,16 @@ export default function SiteDetails() {
 
   // Mini map showing site polygon
   useEffect(() => {
-    if (!site?.geometry || !mapContainer.current || map.current || !MAPBOX_TOKEN) return;
+    if (initialized.current || !site?.geometry || !mapContainer.current || !MAPBOX_TOKEN) return;
 
+    if (!MAPBOX_TOKEN) {
+      if (import.meta.env.DEV) {
+        console.error('[SiteDetails] VITE_MAPBOX_TOKEN is not set. Map will not initialize.');
+      }
+      return;
+    }
+
+    initialized.current = true;
     mapboxgl.accessToken = MAPBOX_TOKEN;
     const m = new mapboxgl.Map({
       container: mapContainer.current,
@@ -119,7 +129,7 @@ export default function SiteDetails() {
       m.fitBounds(bounds, { padding: 40 });
     });
 
-    return () => { m.remove(); map.current = null; };
+    return () => { m.remove(); map.current = null; initialized.current = false; };
   }, [site]);
 
   if (loading) return <div className="p-6"><div className="card h-96 animate-pulse bg-slate-800" /></div>;

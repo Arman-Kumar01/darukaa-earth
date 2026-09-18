@@ -27,6 +27,8 @@ export default function ProjectDetails() {
   const [error, setError] = useState('');
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
+  // Initialized flag prevents duplicate Map instances under React StrictMode
+  const initialized = useRef(false);
 
   useEffect(() => {
     const id = parseInt(projectId!);
@@ -44,8 +46,16 @@ export default function ProjectDetails() {
 
   // Initialize Mapbox when project data is ready
   useEffect(() => {
-    if (!project || !mapContainer.current || map.current || !MAPBOX_TOKEN) return;
+    if (initialized.current || !project || !mapContainer.current || !MAPBOX_TOKEN) return;
 
+    if (!MAPBOX_TOKEN) {
+      if (import.meta.env.DEV) {
+        console.error('[ProjectDetails] VITE_MAPBOX_TOKEN is not set. Map will not initialize.');
+      }
+      return;
+    }
+
+    initialized.current = true;
     mapboxgl.accessToken = MAPBOX_TOKEN;
     const m = new mapboxgl.Map({
       container: mapContainer.current,
@@ -116,7 +126,7 @@ export default function ProjectDetails() {
       });
     });
 
-    return () => { m.remove(); map.current = null; };
+    return () => { m.remove(); map.current = null; initialized.current = false; };
   }, [project, projectId, navigate]);
 
   const handleDeleteProject = async () => {
