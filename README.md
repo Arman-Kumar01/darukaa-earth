@@ -9,9 +9,10 @@ A production-quality full-stack geospatial analytics platform for managing and v
 
 ## 🚀 Live Demo
 
-- **Frontend**: _Deploy to Vercel using instructions below_
-- **Backend API**: _Deploy to Render using instructions below_
-- **API Docs**: `{backend_url}/docs` (FastAPI Swagger UI)
+- **Frontend Application**: [https://darukaa-earth-eight.vercel.app](https://darukaa-earth-eight.vercel.app)
+- **Backend API**: [https://darukaa-earth-api-2p5s.onrender.com](https://darukaa-earth-api-2p5s.onrender.com)
+- **API Swagger Docs**: [https://darukaa-earth-api-2p5s.onrender.com/docs](https://darukaa-earth-api-2p5s.onrender.com/docs)
+- **API Health Check**: [https://darukaa-earth-api-2p5s.onrender.com/health](https://darukaa-earth-api-2p5s.onrender.com/health)
 
 **Demo Credentials** (populated by seed script):
 ```
